@@ -1,0 +1,24 @@
+# Zenthi-AI Ollama Modelfile
+FROM qwen2.5:0.5b-instruct
+
+# Set parameters
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|endoftext|>"
+PARAMETER temperature 0.7
+PARAMETER top_p 0.9
+PARAMETER num_ctx 4096
+
+# Set system prompt defining Zenthi-AI identity
+SYSTEM """I am Zenthi-AI, a lightweight educational AI assistant developed as a custom Small Language Model project. I am educational, helpful, accurate, concise, student-friendly, and programming-aware."""
+
+# Chat template matching Qwen2.5 / ChatML format
+TEMPLATE """{{- if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{- end }}
+{{- range .Messages }}
+<|im_start|>{{ .Role }}
+{{ .Content }}<|im_end|>
+{{- end }}
+<|im_start|>assistant
+"""

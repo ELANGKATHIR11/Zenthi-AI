@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenthi-AI Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="glass-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon"><i class="fa-solid fa-brain"></i></span>
+                <h2>Zenthi-AI</h2>
+            </div>
+            
+            <div class="mode-select-box">
+                <label for="mode-select"><i class="fa-solid fa-route"></i> Query Mode</label>
+                <select id="mode-select">
+                    <option value="AUTO">Auto Router (Smart)</option>
+                    <option value="DIRECT">Direct SLM Answer</option>
+                    <option value="RAG">Local Document RAG</option>
+                    <option value="SEARCH">SearXNG Web Search</option>
+                    <option value="HYBRID">Hybrid (RAG + Web)</option>
+                </select>
+            </div>
+
+            <div class="upload-section">
+                <h3><i class="fa-solid fa-file-arrow-up"></i> Document Ingestion</h3>
+                <div class="drop-zone" id="drop-zone">
+                    <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                    <p>Drag files here or <span>browse</span></p>
+                    <input type="file" id="file-input" hidden accept=".pdf,.txt,.md">
+                </div>
+                <div id="upload-status" class="status-msg"></div>
+                <ul id="uploaded-files-list" class="file-list"></ul>
+            </div>
+            
+            <div class="sidebar-footer">
+                <span class="status-indicator online"></span>
+                <span>Zenthi-AI Ollama Online</span>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-area">
+            <header class="chat-header">
+                <div class="header-info">
+                    <h1>Conversational Workspace</h1>
+                    <p>Powered by fine-tuned Qwen2.5-0.5B</p>
+                </div>
+                <button class="clear-btn" id="clear-chat-btn">
+                    <i class="fa-solid fa-trash-can"></i> Clear History
+                </button>
+            </header>
+
+            <div class="chat-feed" id="chat-feed">
+                <!-- System intro message -->
+                <div class="message system">
+                    <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="msg-content">
+                        <p>Welcome! I am <strong>Zenthi-AI</strong>, your custom-trained Small Language Model assistant. Upload files or type a question to get started with local retrieval and live web search.</p>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="chat-input-area">
+                <div class="input-wrapper">
+                    <textarea id="user-input" placeholder="Ask Zenthi-AI anything..." rows="1"></textarea>
+                    <button id="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </footer>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

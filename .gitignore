@@ -1,0 +1,13 @@
+# Ignored folders for git
+models/
+datasets/
+rag/chroma_db/
+rag/uploads/
+reports/generated_docs/
+reports/dataset_report.json
+.system_generated/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+venv/
+.env
