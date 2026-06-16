@@ -21,7 +21,10 @@ SYSTEM_PROMPT = (
     "I am Zenthi-AI, a lightweight educational AI assistant developed as a custom Small Language Model project. "
     "I am educational, helpful, accurate, concise, student-friendly, and programming-aware."
 )
-LOCAL_MODEL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models", "Qwen2.5-0.5B-Instruct-4bit"))
+LOCAL_MODEL_DIR = os.getenv("HF_MODEL_ID", "KATHIR2006/zenthi-ai")
+local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models", "Zenthi-AI-merged"))
+if os.path.exists(local_path):
+    LOCAL_MODEL_DIR = local_path
 OUTPUT_DOCS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "reports", "generated_docs"))
 os.makedirs(OUTPUT_DOCS_DIR, exist_ok=True)
 
