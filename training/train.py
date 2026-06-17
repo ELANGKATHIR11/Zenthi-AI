@@ -20,16 +20,15 @@ VAL_DATA_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "d
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models", "Zenthi-AI-LoRA"))
 
 class ChatDataset(Dataset):
-    def __init__(self, filepath, tokenizer, max_length=1024):
+    def __init__(self, filepath, tokenizer, max_length=1024, max_samples=10000):
         self.tokenizer = tokenizer
         self.max_length = max_length
+        self.max_samples = max_samples
         with open(filepath, 'r', encoding='utf-8') as f:
             self.data = json.load(f)
             
     def __len__(self):
-        # Limit dataset size for college demonstration if needed (e.g., 5000 items to train fast)
-        # Here we train on the full or a subset up to 10,000 for local speed
-        return min(len(self.data), 10000)
+        return min(len(self.data), self.max_samples)
         
     def __getitem__(self, idx):
         item = self.data[idx]
@@ -84,8 +83,8 @@ def train():
     
     # LoRA config targeting Qwen attention & projection layers
     peft_config = LoraConfig(
-        r=8,
-        lora_alpha=16,
+        r=16,
+        lora_alpha=32,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
         lora_dropout=0.05,
         bias="none",
@@ -96,8 +95,8 @@ def train():
     model.print_trainable_parameters()
     
     print("Loading datasets...")
-    train_dataset = ChatDataset(TRAIN_DATA_PATH, tokenizer)
-    val_dataset = ChatDataset(VAL_DATA_PATH, tokenizer)
+    train_dataset = ChatDataset(TRAIN_DATA_PATH, tokenizer, max_samples=100000)
+    val_dataset = ChatDataset(VAL_DATA_PATH, tokenizer, max_samples=200)
     
     training_args = TrainingArguments(
         output_dir=OUTPUT_DIR,
@@ -110,7 +109,7 @@ def train():
         eval_strategy="steps",
         save_strategy="steps",
         save_steps=200,
-        max_steps=1000, # Run 1000 steps to demonstrate training, can adjust
+        max_steps=1200, # Run 1200 steps to optimize
         fp16=not torch.cuda.is_bf16_supported(),
         bf16=torch.cuda.is_bf16_supported(),
         logging_dir=os.path.join(OUTPUT_DIR, "logs"),
@@ -128,7 +127,12 @@ def train():
     )
     
     print("Starting training...")
-    trainer.train()
+    checkpoint_dir = os.path.join(OUTPUT_DIR, "checkpoint-400")
+    if os.path.exists(checkpoint_dir):
+        print(f"Resuming training from checkpoint: {checkpoint_dir}")
+        trainer.train(resume_from_checkpoint=checkpoint_dir)
+    else:
+        trainer.train()
     
     print("Saving adapter model...")
     model.save_pretrained(OUTPUT_DIR)
