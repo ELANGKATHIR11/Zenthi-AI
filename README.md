@@ -9,86 +9,101 @@ pinned: false
 license: mit
 ---
 
-# Zenthi-AI: Custom Small Language Model (SLM) Project
+# Zenthi-AI: Agentic Multi-Model AI Operating System
 
-Zenthi-AI is a production-ready, custom fine-tuned Small Language Model conversational assistant built from scratch for a college final-year project. It integrates local retrieval-augmented generation (RAG), live web search metasearch engines, session-based memory history, and a responsive dark-themed dashboard.
-
----
-
-## Technical Stack & Features
-* **Model Base**: `Qwen/Qwen2.5-0.5B-Instruct`
-* **Fine-Tuning (QLoRA)**: Fine-tuned on a merged, cleaned dataset of Alpaca, Dolly 15K, OpenHermes, UltraChat, and ShareGPT.
-* **Quantization**: GGUF format for local deployment (quantized size under 500 MB).
-* **Local RAG**: ChromaDB database utilizing local `all-MiniLM-L6-v2` Sentence Transformer embeddings. Handles text chunking and indexing for PDF, TXT, and Markdown files.
-* **Live Web Search**: Custom SearXNG metasearch engine client wrapper with robust public-instance and offline mock fallbacks.
-* **Session Memory**: Windowed conversation manager preserving context and identity boundaries.
-* **Backend API**: FastAPI server exposing endpoints for chat routing, file ingestion, and health metrics.
-* **Web UI**: Modern dark glassmorphic HTML/CSS/JS dashboard.
+Zenthi-AI OS is a production-ready, local-first conversational AI Operating System dashboard built from scratch. It intelligently orchestrates multiple expert AI models (`qwen2.5-coder:3b`, `riven/smolvlm:latest`, and `qwen2.5:1.5b-instruct`) using a 10-step agentic lifecycle, loading only the required expert model in VRAM for each query.
 
 ---
 
-## Directory Structure
+## 🛠️ Multi-Agent Architecture
+
+Every incoming request follows a structured 10-step lifecycle to optimize context, memory, and model selection:
+
+1. **Input Validation**: Sanitizes queries and handles visual base64 attachments.
+2. **Intent Classification**: Evaluated by the **Router Agent** (running `qwen2.5:1.5b-instruct`) to detect intent (`CODE`, `VISION`, `RAG`, `SEARCH`, `KNOWLEDGE`, `COMPLEX`).
+3. **Workflow Planning**: For `COMPLEX` multi-step tasks, the **Planner Agent** designs a sequence of tools to run.
+4. **Memory Integration**: Fetches session-based conversational history.
+5. **RAG Retrieval**: Retrieves context chunks from local document collections indexed in ChromaDB.
+6. **Web Search Integration**: Gathers search context from local SearXNG metasearch API.
+7. **Prompt Compilation**: Assembles the exact context, history, and user query.
+8. **Expert Dispatching**: Directs the compiled prompt to the assigned expert model in Ollama.
+9. **Output Validation**: Evaluated by the **Validation Agent** to clean up any syntax or leakages.
+10. **Finalization**: Saves the response in the session memory and returns it to the dashboard.
+
+---
+
+## 📊 Routing & Classification Accuracy Benchmarks
+
+We executed a comprehensive benchmark evaluation on **500 unique test queries** (100 per category) running on a local **RTX 5060 GPU**:
+
+* **Overall Routing Accuracy**: **72.60%**
+* **Average Latency**: **651.54 ms** per query
+
+| Intent Category | Routing Accuracy (%) | Assigned Expert Model |
+| :--- | :--- | :--- |
+| **CODE** (Programming, math, algorithms) | **100.00%** | `qwen2.5-coder:3b` |
+| **VISION** (Visual prompts, image understanding) | **100.00%** | `riven/smolvlm:latest` |
+| **SEARCH** (News, current events, live updates) | **99.00%** | `qwen2.5:1.5b-instruct` |
+| **RAG** (Context queries, files, uploads) | **43.00%** | `qwen2.5:1.5b-instruct` |
+| **KNOWLEDGE** (General writing, history, summaries) | **21.00%** | `qwen2.5:1.5b-instruct` |
+
+---
+
+## 📂 Project Organization
+
 ```text
-project/
-├── datasets/                 # Merged/cleaned datasets, Alpaca/Dolly/train JSON splits
-├── synthetic_data/           # Synthetic instruction generation pipelines
-├── training/                 # LoRA fine-tuning scripts and merging pipelines
-├── evaluation/               # Model validation, benchmark scripts, metric logs
-├── rag/                      # ChromaDB helper scripts and ingestion models
-├── search/                   # SearXNG wrapper, search ranking and scraping utilities
-├── memory/                   # Chat history and windowed memory logic
+Zenthi-AI/
+├── agents/                   # Modular agent subclasses and orchestrator
+│   ├── ollama_client.py      # Ollama API connection
+│   ├── router_agent.py       # Intent router agent
+│   ├── planner_agent.py      # Action sequencing agent
+│   ├── agents.py             # Helper agents (RAG, search, memory, validation)
+│   └── orchestrator.py       # 10-step lifecycle manager
 ├── api/                      # FastAPI endpoints (chat, upload, health)
-├── frontend/                 # Web UI dashboard (HTML/CSS/JS)
-├── ollama/                   # Modelfile configuration for Ollama deployment
-├── docs/                     # Guides, reports, and architectures
+│   └── main.py               # Main api driver, mounts static web UI at root /
+├── frontend/                 # Glassmorphic dashboard web UI
+│   ├── index.html            # Landing page
+│   ├── app.js                # Frontend connector (attachment previews & agent traces)
+│   └── style.css             # Main styling rules
+├── rag/                      # ChromaDB vector store helpers
+├── search/                   # SearXNG wrapper utilities
+├── memory/                   # Session chat history manager
+├── Dockerfile                # Hugging Face deployment container configuration
+├── start.sh                  # Container entrypoint script preloading VRAM models
 └── requirements.txt          # Python dependencies
 ```
 
 ---
 
-## Setup & Running Locally
+## 🐳 Running Locally & Deployment
 
-### 1. Environment Activation
-Activate your conda environment containing deep learning dependencies:
+### 1. Run via Docker (Same as Hugging Face Spaces)
+Build and run the self-contained container:
 ```bash
-conda activate dgpu-aiml
-pip install -r requirements.txt
+docker build -t zenthi-ai .
+docker run -p 7860:7860 --gpus all zenthi-ai
 ```
+Open `http://localhost:7860` to access the chat dashboard.
 
-### 2. Dataset Cleaning & Ingestion
-Clean and compile all datasets (Alpaca, Dolly, OpenHermes, UltraChat, ShareGPT) into unified train/val json structures:
-```bash
-python scripts/prepare_dataset.py
-```
+### 2. Manual Local Setup
+1. **Activate Environment**:
+   ```bash
+   conda activate dgpu-core
+   pip install -r requirements.txt
+   ```
+2. **Launch Ollama Server**:
+   Ensure Ollama is running and models are downloaded:
+   - `qwen2.5:1.5b-instruct`
+   - `qwen2.5-coder:3b`
+   - `riven/smolvlm:latest`
+3. **Run API Server**:
+   ```bash
+   python api/main.py
+   ```
+4. **Access UI**: Open `frontend/index.html` in your browser.
 
-### 3. Identity Synthetic Data Generation
-Generate synthetic reasoning, programming, and identity dataset turns defining the Zenthi-AI persona:
-```bash
-python synthetic_data/generator.py
-```
+---
 
-### 4. Running Model Fine-Tuning
-Execute local parameter-efficient QLoRA training on your GPU:
-```bash
-python training/train.py
-```
-
-### 5. Model Merging & Exporting
-Merge LoRA adapters into base weights for GGUF compilation:
-```bash
-python training/export_gguf.py
-```
-
-### 6. Packaging into Ollama
-Create your customized local Ollama model mapping the Zenthi-AI system prompt and chat template:
-```bash
-ollama create Zenthi-AI -f ollama/Modelfile
-```
-
-### 7. Run backend FastAPI API & Frontend Server
-Launch backend server:
-```bash
-python api/main.py
-```
-Open `frontend/index.html` in any browser to start chat sessions, upload documents, and toggle auto/hybrid routing settings!
->>>>>>> 513ed1f (Initial commit of Zenthi-AI codebase)
+## ⚖️ License
+* **Codebase** (RAG, Agents, API, and Frontend UI): Licensed under the **MIT License**.
+* **Model Weights & Quantizations**: Licensed under the **Apache License 2.0**.
