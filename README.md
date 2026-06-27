@@ -104,6 +104,8 @@ Open `http://localhost:7860` to access the chat dashboard.
 
 ---
 
-## ⚖️ License
-* **Codebase** (RAG, Agents, API, and Frontend UI): Licensed under the **MIT License**.
-* **Model Weights & Quantizations**: Licensed under the **Apache License 2.0**.
+## ⚖️ Licenses & Compliance
+
+This project is dual-licensed:
+* **RAG Engine, Multi-Agent Framework, API Backend, & Web UI Codebase**: Licensed under the **MIT License**.
+* **LLM Model Weights & Quantizations**: Licensed under the **Apache License 2.0** (in compliance with the base Qwen2.5 license).
