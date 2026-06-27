@@ -196,7 +196,23 @@ def main():
     ultrachat = process_ultrachat(os.path.join(DATASETS_DIR, "ultrachat_subset.json"))
     sharegpt = process_sharegpt(os.path.join(DATASETS_DIR, "sharegpt_subset.json"))
     
-    all_data = alpaca + dolly + hermes + ultrachat + sharegpt
+    
+    # Load and oversample synthetic identity data to ensure the model locks in its identity
+    synthetic_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "synthetic_data", "synthetic_data.jsonl"))
+    synthetic_data = []
+    if os.path.exists(synthetic_path):
+        print(f"Loading synthetic identity data from {synthetic_path}...")
+        with open(synthetic_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.strip():
+                    synthetic_data.append(json.loads(line))
+        # Oversample 100x
+        oversampled_synthetic = synthetic_data * 100
+        print(f"Oversampled synthetic identity data to {len(oversampled_synthetic)} items.")
+    else:
+        oversampled_synthetic = []
+        
+    all_data = alpaca + dolly + hermes + ultrachat + sharegpt + oversampled_synthetic
     print(f"Total raw examples merged: {len(all_data)}")
     
     cleaned = clean_and_dedup(all_data)

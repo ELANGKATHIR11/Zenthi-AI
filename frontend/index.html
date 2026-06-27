@@ -33,7 +33,7 @@
                 <div class="drop-zone" id="drop-zone">
                     <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
                     <p>Drag files here or <span>browse</span></p>
-                    <input type="file" id="file-input" hidden accept=".pdf,.txt,.md">
+                    <input type="file" id="file-input" hidden accept=".pdf,.txt,.md,.png,.jpg,.jpeg">
                 </div>
                 <div id="upload-status" class="status-msg"></div>
                 <ul id="uploaded-files-list" class="file-list"></ul>
@@ -68,6 +68,7 @@
             </div>
 
             <footer class="chat-input-area">
+                <div id="attachment-preview-container" class="attachment-preview-container" style="display:none;"></div>
                 <div class="input-wrapper">
                     <textarea id="user-input" placeholder="Ask Zenthi-AI anything..." rows="1"></textarea>
                     <button id="send-btn"><i class="fa-solid fa-paper-plane"></i></button>

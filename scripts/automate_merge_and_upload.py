@@ -16,7 +16,7 @@ def wait_and_deploy():
     
     # We poll every 20 seconds. We check if the training output folder and adapter_config.json exists,
     # meaning the Trainer successfully finished and saved the adapter weights.
-    max_checks = 60 # Check for 20 minutes max
+    max_checks = 240 # Check for 80 minutes max
     checks = 0
     while not os.path.exists(CHECK_FILE):
         time.sleep(20)

@@ -1,3 +1,14 @@
+---
+title: Zenthi-AI OS
+emoji: 🧠
+colorFrom: purple
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
 # Zenthi-AI: Custom Small Language Model (SLM) Project
 
 Zenthi-AI is a production-ready, custom fine-tuned Small Language Model conversational assistant built from scratch for a college final-year project. It integrates local retrieval-augmented generation (RAG), live web search metasearch engines, session-based memory history, and a responsive dark-themed dashboard.
