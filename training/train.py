@@ -14,7 +14,7 @@ from transformers import (
 )
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
-BASE_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
+BASE_MODEL = "Qwen/Qwen2.5-Coder-3B-Instruct"
 TRAIN_DATA_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "datasets", "train.json"))
 VAL_DATA_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "datasets", "val.json"))
 OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models", "Zenthi-AI-LoRA"))
@@ -75,6 +75,7 @@ def train():
         BASE_MODEL,
         quantization_config=bnb_config,
         device_map="auto",
+        low_cpu_mem_usage=True,
         trust_remote_code=True
     )
     
@@ -95,14 +96,15 @@ def train():
     model.print_trainable_parameters()
     
     print("Loading datasets...")
-    train_dataset = ChatDataset(TRAIN_DATA_PATH, tokenizer, max_samples=100000)
-    val_dataset = ChatDataset(VAL_DATA_PATH, tokenizer, max_samples=200)
+    train_dataset = ChatDataset(TRAIN_DATA_PATH, tokenizer, max_length=512, max_samples=100000)
+    val_dataset = ChatDataset(VAL_DATA_PATH, tokenizer, max_length=512, max_samples=200)
     
     training_args = TrainingArguments(
         output_dir=OUTPUT_DIR,
         per_device_train_batch_size=2,
         per_device_eval_batch_size=2,
         gradient_accumulation_steps=4,
+        gradient_checkpointing=True,
         learning_rate=2e-4,
         logging_steps=10,
         eval_steps=100,
@@ -127,7 +129,7 @@ def train():
     )
     
     print("Starting training...")
-    checkpoint_dir = os.path.join(OUTPUT_DIR, "checkpoint-400")
+    checkpoint_dir = os.path.join(OUTPUT_DIR, "checkpoint-1000")
     if os.path.exists(checkpoint_dir):
         print(f"Resuming training from checkpoint: {checkpoint_dir}")
         trainer.train(resume_from_checkpoint=checkpoint_dir)
