@@ -7,7 +7,7 @@ from agents.ollama_client import OllamaClient
 class PlannerAgent:
     def __init__(self, client: Optional[OllamaClient] = None):
         self.client = client or OllamaClient()
-        self.model = "qwen2.5:1.5b-instruct"
+        self.model = os.environ.get("ZENTHI_MODEL", "zenthi-ai:latest")
 
     def plan(self, query: str, conversation_context: str = "") -> Dict[str, Any]:
         """Generates a plan containing sequential steps to solve a complex query."""

@@ -1,0 +1,40 @@
+{
+  "checkpoint_name": "qwen3.5-hybrid:4b",
+  "evaluation_timestamp": "2026-11-07 18:07:16",
+  "overall_accuracy": 0.3583,
+  "overall_accuracy_percent": "35.83%",
+  "average_latency_sec": 9.48,
+  "total_samples_evaluated": 12,
+  "domain_metrics": {
+    "web_extraction": {
+      "accuracy": 0.0,
+      "accuracy_percent": "0.00%",
+      "evaluated_count": 2
+    },
+    "doc_generation": {
+      "accuracy": 0.1,
+      "accuracy_percent": "10.00%",
+      "evaluated_count": 2
+    },
+    "reasoning": {
+      "accuracy": 0.45,
+      "accuracy_percent": "45.00%",
+      "evaluated_count": 2
+    },
+    "diagram_analysis": {
+      "accuracy": 0.7,
+      "accuracy_percent": "70.00%",
+      "evaluated_count": 2
+    },
+    "ocr_vision": {
+      "accuracy": 0.7,
+      "accuracy_percent": "70.00%",
+      "evaluated_count": 2
+    },
+    "code": {
+      "accuracy": 0.2,
+      "accuracy_percent": "20.00%",
+      "evaluated_count": 2
+    }
+  }
+}

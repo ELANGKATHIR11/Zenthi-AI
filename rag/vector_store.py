@@ -1,56 +1,108 @@
 import os
 import uuid
-import chromadb
-from chromadb.utils import embedding_functions
-from sentence_transformers import SentenceTransformer
+import torch
+from typing import List, Dict, Any
+from transformers import AutoTokenizer, AutoModel
+from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams, PointStruct
 
 RAG_DIR = os.path.abspath(os.path.dirname(__file__))
-DB_PATH = os.path.join(RAG_DIR, "chroma_db")
-EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+QDRANT_PATH = os.path.join(RAG_DIR, "qdrant_db")
+COLLECTION_NAME = "zenthi_ai_knowledge"
+EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+VECTOR_DIM = 384
 
 class LocalRAG:
-    def __init__(self):
-        os.makedirs(DB_PATH, exist_ok=True)
-        # Set up persistent Chroma client
-        self.client = chromadb.PersistentClient(path=DB_PATH)
-        
-        # Load local sentence transformers embedding function
-        print(f"Loading local embedding model: {EMBEDDING_MODEL_NAME}...")
-        self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=EMBEDDING_MODEL_NAME
-        )
-        
-        # Get or create collection
-        self.collection = self.client.get_or_create_collection(
-            name="zenthi_ai_knowledge",
-            embedding_function=self.embedding_function
-        )
-        print("ChromaDB persistent collection initialized.")
+    _instance = None
+    _client = None
+    _model = None
+    _tokenizer = None
 
-    def chunk_text(self, text, chunk_size=500, overlap=50):
-        chunks = []
-        start = 0
-        while start < len(text):
-            end = start + chunk_size
-            chunks.append(text[start:end])
-            start += chunk_size - overlap
-        return chunks
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(LocalRAG, cls).__new__(cls)
+        return cls._instance
 
-    def ingest_document(self, filepath):
-        print(f"Ingesting file: {filepath}")
+    def __init__(self, db_path: str = QDRANT_PATH):
+        if LocalRAG._client is not None:
+            self.client = LocalRAG._client
+            self.tokenizer = LocalRAG._tokenizer
+            self.model = LocalRAG._model
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+            return
+            
+        os.makedirs(db_path, exist_ok=True)
+        self.client = QdrantClient(path=db_path)
+        LocalRAG._client = self.client
+        
+        # Initialize collection if not present
+        if not self.client.collection_exists(COLLECTION_NAME):
+            self.client.create_collection(
+                collection_name=COLLECTION_NAME,
+                vectors_config=VectorParams(size=VECTOR_DIM, distance=Distance.COSINE)
+            )
+            print(f"[Qdrant] Collection '{COLLECTION_NAME}' created at {db_path}.")
+        else:
+            print(f"[Qdrant] Connected to existing collection '{COLLECTION_NAME}'.")
+            
+        # Initialize GPU-accelerated local embedding model
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"[Qdrant] Loading embedding model '{EMBEDDING_MODEL_NAME}' on {self.device.upper()}...")
+        self.tokenizer = AutoTokenizer.from_pretrained(EMBEDDING_MODEL_NAME)
+        self.model = AutoModel.from_pretrained(EMBEDDING_MODEL_NAME).to(self.device)
+        self.model.eval()
+        
+        LocalRAG._tokenizer = self.tokenizer
+        LocalRAG._model = self.model
+
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+        """Generates normalized 384-d dense embeddings using PyTorch CUDA."""
+        if not texts:
+            return []
+        inputs = self.tokenizer(
+            texts,
+            padding=True,
+            truncation=True,
+            max_length=512,
+            return_tensors="pt"
+        ).to(self.device)
+        
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+            # Mean pooling
+            embeddings = outputs.last_hidden_state.mean(dim=1)
+            embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+            
+        return embeddings.cpu().tolist()
+
+    def chunk_text(self, text: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:
+        try:
+            from langchain_text_splitters import RecursiveCharacterTextSplitter
+            splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=overlap)
+            return splitter.split_text(text)
+        except Exception:
+            chunks = []
+            start = 0
+            while start < len(text):
+                end = start + chunk_size
+                chunks.append(text[start:end])
+                start += chunk_size - overlap
+                if start >= len(text):
+                    break
+            return chunks
+
+    def ingest_document(self, filepath: str) -> bool:
+        print(f"[Qdrant] Ingesting file: {filepath}")
         if not os.path.exists(filepath):
-            print("File does not exist.")
+            print(f"[Qdrant ERROR] File does not exist: {filepath}")
             return False
             
         filename = os.path.basename(filepath)
         ext = os.path.splitext(filename)[1].lower()
         
         content = ""
-        if ext == ".txt":
-            with open(filepath, 'r', encoding='utf-8') as f:
-                content = f.read()
-        elif ext == ".md":
-            with open(filepath, 'r', encoding='utf-8') as f:
+        if ext in [".txt", ".md"]:
+            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
         elif ext == ".pdf":
             try:
@@ -62,71 +114,79 @@ class LocalRAG:
                     if t:
                         text_list.append(t)
                 content = "\n".join(text_list)
-            except ImportError:
-                # Fallback if pypdf is not installed
-                print("[WARNING] pypdf not installed. Please run `pip install pypdf` for PDF parsing. Extracting raw lines if TXT encoded.")
-                try:
-                    with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-                except:
-                    pass
+            except Exception as e:
+                print(f"[Qdrant WARNING] pypdf extraction failed: {e}")
+                return False
         else:
-            print("Unsupported file format. Supported: .txt, .md, .pdf")
+            print(f"[Qdrant] Unsupported file format: {ext}. Supported: .txt, .md, .pdf")
             return False
             
         if not content.strip():
-            print("No text content found to index.")
+            print("[Qdrant WARNING] No readable text found in document.")
             return False
             
-        # Chunk text
         chunks = self.chunk_text(content)
-        print(f"Generated {len(chunks)} chunks.")
+        if not chunks:
+            return False
+            
+        vectors = self.embed_texts(chunks)
         
-        # Ingest to ChromaDB
-        ids = [str(uuid.uuid4()) for _ in chunks]
-        metadatas = [{"source": filename} for _ in chunks]
+        points = [
+            PointStruct(
+                id=str(uuid.uuid4()),
+                vector=vec,
+                payload={
+                    "text": chunk,
+                    "source": filename
+                }
+            )
+            for chunk, vec in zip(chunks, vectors)
+        ]
         
-        self.collection.add(
-            documents=chunks,
-            metadatas=metadatas,
-            ids=ids
+        self.client.upsert(
+            collection_name=COLLECTION_NAME,
+            points=points
         )
-        print(f"[SUCCESS] Successfully indexed {len(chunks)} chunks from {filename}.")
+        print(f"[Qdrant SUCCESS] Successfully indexed {len(points)} chunks from '{filename}'.")
         return True
 
-    def query(self, query_text, top_k=3):
-        results = self.collection.query(
-            query_texts=[query_text],
-            n_results=top_k
+    def query(self, query_text: str, top_k: int = 3) -> List[Dict[str, Any]]:
+        query_vectors = self.embed_texts([query_text])
+        if not query_vectors:
+            return []
+            
+        query_vec = query_vectors[0]
+        results = self.client.query_points(
+            collection_name=COLLECTION_NAME,
+            query=query_vec,
+            limit=top_k
         )
         
         retrieved_docs = []
-        if results and "documents" in results and results["documents"]:
-            docs = results["documents"][0]
-            metas = results["metadatas"][0] if "metadatas" in results else [{}]*len(docs)
-            for doc, meta in zip(docs, metas):
-                retrieved_docs.append({
-                    "text": doc,
-                    "source": meta.get("source", "Unknown")
-                })
+        for point in results.points:
+            payload = point.payload or {}
+            retrieved_docs.append({
+                "text": payload.get("text", ""),
+                "source": payload.get("source", "Unknown"),
+                "score": point.score
+            })
+            
         return retrieved_docs
 
 if __name__ == "__main__":
-    # Self-test
     rag = LocalRAG()
     test_file = os.path.join(RAG_DIR, "test_document.txt")
     with open(test_file, 'w', encoding='utf-8') as f:
-        f.write("Zenthi-AI is a specialized educational Small Language Model fine-tuned for college final-year projects.\n"
-                "It has an integrated ChromaDB RAG layer to access local text, markdown, and PDF files.\n"
-                "The system supports SearXNG search engine integrations for real-time live queries.")
+        f.write("Zenthi-AI is an Agentic Multi-Model AI Operating System.\n"
+                "It uses Qdrant Vector Database for local document storage and semantic search.\n"
+                "Qdrant provides high-speed vector retrieval with cosine distance.")
                 
     rag.ingest_document(test_file)
-    res = rag.query("What is Zenthi-AI RAG layer?")
-    print("Query Results:")
+    res = rag.query("What vector database does Zenthi-AI use?")
+    print("\nQuery Results:")
     for r in res:
-        print(f"- [{r['source']}]: {r['text']}")
-    
-    # Cleanup test file
+        print(f"- [{r['source']}] (Score: {r['score']:.4f}): {r['text']}")
+        
     try:
         os.remove(test_file)
     except:

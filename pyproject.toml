@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "polarflash"
+version = "1.0.0"
+description = "POLAR-FLASH: Extreme Neural Network Compression toward 1.75 BPW with Physical Memory Systems Optimization"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Zenith AI Research Team", email = "research@zenith-ai.org" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: System :: Hardware"
+]
+dependencies = [
+    "torch>=2.2.0",
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+    "safetensors>=0.4.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0"
+]
+
+[project.scripts]
+polarflash = "polarflash_core.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["polarflash*"]
+

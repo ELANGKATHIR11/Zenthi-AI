@@ -11,17 +11,11 @@ until curl -s http://localhost:11434/ > /dev/null; do
 done
 echo "Ollama is ready."
 
-# Preload models into cache/memory
-echo "Preloading qwen2.5:1.5b-instruct..."
-ollama run qwen2.5:1.5b-instruct "Hello"
+# Preload Qwen 3.5 Hybrid SLM+VLM into VRAM
+echo "Preloading qwen3.5-hybrid:4b..."
+ollama run qwen3.5-hybrid:4b "Ready"
 
-echo "Preloading qwen2.5-coder:3b..."
-ollama run qwen2.5-coder:3b "Hello"
-
-echo "Preloading riven/smolvlm:latest..."
-ollama run riven/smolvlm:latest "Hello"
-
-echo "All models preloaded."
+echo "Qwen 3.5 Hybrid preloaded in VRAM."
 
 # Start FastAPI application serving frontend dashboard
 echo "Starting Zenthi-AI FastAPI backend on port 7860..."

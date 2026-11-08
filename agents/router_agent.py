@@ -7,7 +7,7 @@ from agents.ollama_client import OllamaClient
 class RouterAgent:
     def __init__(self, client: Optional[OllamaClient] = None):
         self.client = client or OllamaClient()
-        self.model = "qwen2.5:1.5b-instruct"
+        self.model = os.environ.get("ZENTHI_MODEL", "zenith-4b:latest")
         
         # Simple heuristics as fallbacks
         self.code_patterns = [
@@ -44,8 +44,8 @@ class RouterAgent:
         if has_images:
             return {
                 "intent": "VISION",
-                "expert_model": "riven/smolvlm:latest",
-                "reasoning": "Input contains image content."
+                "expert_model": self.model,
+                "reasoning": "Input contains visual content processed by Zenthi-AI VLM."
             }
 
         # Build prompt for Ollama Router
@@ -73,8 +73,10 @@ class RouterAgent:
             )
             
             response_text = res.get("response", "").strip()
+            # Clean think blocks if present
+            if "</think>" in response_text:
+                response_text = response_text.split("</think>")[-1].strip()
             # Try parsing JSON from the response text
-            # Find json boundaries if there is wrapping text
             json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
             if json_match:
                 data = json.loads(json_match.group(0))
@@ -87,14 +89,14 @@ class RouterAgent:
             intent = self._heuristic_classify(query)
             reasoning = f"Exception in LLM routing: {str(e)}; fallback to heuristics."
             
-        # Map intent to expert model
+        # Map intent to expert model (All unified to Zenthi-AI Hybrid)
         model_mapping = {
-            "VISION": "riven/smolvlm:latest",
-            "CODE": "qwen2.5-coder:3b",
-            "KNOWLEDGE": "qwen2.5:1.5b-instruct",
-            "RAG": "qwen2.5:1.5b-instruct",
-            "SEARCH": "qwen2.5:1.5b-instruct",
-            "COMPLEX": "qwen2.5:1.5b-instruct"
+            "VISION": self.model,
+            "CODE": self.model,
+            "KNOWLEDGE": self.model,
+            "RAG": self.model,
+            "SEARCH": self.model,
+            "COMPLEX": self.model
         }
         
         # Safe default fallback

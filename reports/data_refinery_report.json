@@ -1,0 +1,41 @@
+{
+  "title": "Zenthi-AI Milestone 1: Data Refinery & Decontamination Report",
+  "total_train_samples": 15000,
+  "total_eval_samples": 600,
+  "decontaminated_humaneval_samples_purged": 3514,
+  "quality_auditor_rejected_samples": 4028,
+  "domain_breakdown": {
+    "code": {
+      "train_count": 4000,
+      "eval_count": 100,
+      "total_curated": 4100
+    },
+    "ocr_vision": {
+      "train_count": 3000,
+      "eval_count": 100,
+      "total_curated": 3100
+    },
+    "web_extraction": {
+      "train_count": 3000,
+      "eval_count": 100,
+      "total_curated": 3100
+    },
+    "reasoning": {
+      "train_count": 2000,
+      "eval_count": 100,
+      "total_curated": 2100
+    },
+    "doc_generation": {
+      "train_count": 2000,
+      "eval_count": 100,
+      "total_curated": 2100
+    },
+    "diagram_analysis": {
+      "train_count": 1000,
+      "eval_count": 100,
+      "total_curated": 1100
+    }
+  },
+  "train_file": "F:\\Zenith-AI\\datasets\\zenthi_hybrid_train.jsonl",
+  "eval_file": "F:\\Zenith-AI\\datasets\\zenthi_hybrid_eval.jsonl"
+}

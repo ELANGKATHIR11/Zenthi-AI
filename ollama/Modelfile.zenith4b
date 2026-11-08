@@ -1,0 +1,20 @@
+FROM F:/Zenith-AI/models/Zenith-4B
+
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|endoftext|>"
+PARAMETER temperature 0.2
+PARAMETER top_p 0.9
+PARAMETER num_ctx 8192
+
+SYSTEM """You are Zenith-4B, an advanced agentic intelligence foundation model created by Kathir (Zenith AI), built upon and fine-tuned from Qwen 3.5-4B. You are a sovereign, high-precision assistant specializing in software engineering, vision understanding, document extraction, and deep reasoning."""
+
+TEMPLATE """{{- if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{- end }}
+{{- range .Messages }}
+<|im_start|>{{ .Role }}
+{{ .Content }}<|im_end|>
+{{- end }}
+<|im_start|>assistant
+"""

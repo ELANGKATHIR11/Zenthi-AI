@@ -1,0 +1,27 @@
+{
+  "adapter_evaluated": "models/adapter-code",
+  "timestamp": "2026-11-08 10:01:54",
+  "code_domain": {
+    "accuracy": 0.5,
+    "accuracy_percent": "50.00%",
+    "ast_syntax_validity_rate": "62.50%",
+    "samples_evaluated": 8
+  },
+  "reasoning_domain": {
+    "accuracy": 0.9563,
+    "accuracy_percent": "95.62%",
+    "samples_evaluated": 8
+  },
+  "performance": {
+    "average_throughput_tokens_per_sec": 7.37,
+    "total_tokens_generated": 2324,
+    "total_latency_seconds": 315.38
+  },
+  "comparison_vs_baseline": {
+    "baseline_code_score": "20.00%",
+    "trained_code_score": "50.00%",
+    "improvement": "+30.00%",
+    "baseline_reasoning_score": "45.00%",
+    "trained_reasoning_score": "95.62%"
+  }
+}

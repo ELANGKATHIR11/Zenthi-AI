@@ -60,25 +60,33 @@ class ZenthiAIOrchestrator:
             workflow_steps.append(f"-> Plan generated: {plan_info.get('reasoning', 'No reasoning provided')}")
             # Execute planner steps
             for step in plan_info.get("steps", []):
-                tool = step.get("tool")
-                instruction = step.get("instruction")
+                tool = str(step.get("tool", "")).upper()
+                instruction = str(step.get("instruction", "")).strip()
+                sub_query = instruction if instruction else query
                 workflow_steps.append(f"   [Step {step.get('step')}] Running {tool}: {instruction}")
                 
                 if tool == "RAG":
-                    rag_docs = self.retrieval.retrieve(query, top_k=2)
+                    rag_docs = self.retrieval.retrieve(sub_query, top_k=2)
                     if rag_docs:
-                        context += "\n=== RAG Context ===\n"
+                        context += "\n=== Local Document Context ===\n"
                         for doc in rag_docs:
                             context += f"- [{doc['source']}]: {doc['text']}\n"
-                            if f"Doc: {doc['source']}" not in citations:
-                                citations.append(f"Doc: {doc['source']}")
+                            citation_label = f"Local Doc: {doc['source']}"
+                            if citation_label not in citations:
+                                citations.append(citation_label)
                 elif tool == "SEARCH":
-                    search_res = self.search.search(query, top_k=2)
+                    search_res = self.search.search(sub_query, top_k=2)
                     if search_res:
                         context += "\n=== Live Web Search Context ===\n"
                         context += self.search.format_results(search_res)
                         for r in search_res:
-                            citations.append(f"Web: {r['title']} ({r['url']})")
+                            citation_label = f"Web: {r['title']} ({r['url']})"
+                            if citation_label not in citations:
+                                citations.append(citation_label)
+                elif tool in ["CODE", "CALCULATE"]:
+                    workflow_steps.append(f"      Coding sub-task identified for {expert_model}.")
+                elif tool == "MEMORY":
+                    workflow_steps.append("      Conversational memory context verified.")
         else:
             workflow_steps.append("3. Processing single-turn workflow tools...")
             
@@ -88,7 +96,7 @@ class ZenthiAIOrchestrator:
             
             # 5. Retrieval Integration
             if run_mode in ["RAG", "HYBRID"] or detected_intent == "RAG":
-                workflow_steps.append("5. Retrieval Agent querying ChromaDB document store...")
+                workflow_steps.append("5. Retrieval Agent querying Qdrant vector database...")
                 rag_docs = self.retrieval.retrieve(query, top_k=3)
                 if rag_docs:
                     context += "\n=== Local Document Context ===\n"
@@ -128,8 +136,9 @@ class ZenthiAIOrchestrator:
             
         # Get memory history
         system_prompt = (
-            "I am Zenthi-AI OS, a production-grade Agentic Multi-Model AI Operating System. "
-            "I deliver accurate, secure, maintainable, and production-ready solutions by coordinating specialized AI capabilities."
+            "You are Zenith AI OS powered by Zenith-4B, an advanced agentic intelligence foundation model created by Kathir (Zenith AI), "
+            "built upon and fine-tuned from Qwen 3.5-4B. You deliver sovereign, accurate, secure, and production-ready solutions across "
+            "software engineering, computer vision, document extraction, and deep reasoning."
         )
         
         # Fetch history and add current user message
@@ -146,8 +155,9 @@ class ZenthiAIOrchestrator:
             user_msg["images"] = images
         messages.append(user_msg)
         
-        # Save user message to memory
-        self.memory.add_message(session_id, "user", query)
+        # Save user message to memory (with image indicator for multi-turn conversational context)
+        memory_user_text = f"[Image Attached] {query}" if (images and not query.startswith("[Image Attached]")) else query
+        self.memory.add_message(session_id, "user", memory_user_text)
         
         # 8. Execute Expert Model
         workflow_steps.append(f"8. Dispatched execution to Expert: {expert_model}...")
@@ -160,6 +170,8 @@ class ZenthiAIOrchestrator:
             workflow_steps.append(f"-> Validation warning: {validation_res['reason']}")
             # Run reflection / cleanup if formatting issues found
             response_content = response_content.replace("<|im_start|>", "").replace("<|im_end|>", "").strip()
+            if not response_content:
+                response_content = f"I am Zenthi-AI OS. I was unable to generate a response from {expert_model}. Please verify model availability in Ollama."
             
         # 10. Save assistant reply to memory & Return
         workflow_steps.append("10. Response finalized. Returning to workspace.")

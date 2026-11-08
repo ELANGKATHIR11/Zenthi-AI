@@ -1,11 +1,13 @@
 import os
 import sys
+import uvicorn
 
 # Add current path to python system path for modules imports
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
-from api.gradio_app import demo
+from api.main import app
 
 if __name__ == "__main__":
-    # Launch Gradio interface (default port 7860 for Hugging Face Spaces integration)
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    # Launch Zenthi-AI OS FastAPI backend serving frontend dashboard
+    print("Starting Zenthi-AI OS on http://localhost:7860")
+    uvicorn.run(app, host="0.0.0.0", port=7860)

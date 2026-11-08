@@ -1,6 +1,4 @@
 import os
-os.environ["BNB_CUDA_VERSION"] = "129"
-
 import json
 import torch
 from torch.utils.data import Dataset

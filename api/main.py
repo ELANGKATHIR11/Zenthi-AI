@@ -1,10 +1,8 @@
-import torch
 import os
-os.environ["BNB_CUDA_VERSION"] = "129" # Apply bitsandbytes Windows matching override
-
 import sys
 import uuid
 import shutil
+import anyio
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -64,33 +62,35 @@ async def upload_document(file: UploadFile = File(...)):
         with open(filepath, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        # Ingest to ChromaDB via the Orchestrator's Retrieval Agent
-        success = orchestrator.retrieval.rag.ingest_document(filepath)
+        # Ingest to Qdrant vector database via the Orchestrator's Retrieval Agent
+        success = await anyio.to_thread.run_sync(orchestrator.retrieval.rag.ingest_document, filepath)
         if not success:
             raise HTTPException(status_code=500, detail="Failed to parse and index document content.")
             
-        return {"status": "success", "filename": file.filename, "detail": "File indexed successfully."}
+        return {"status": "success", "filename": file.filename, "detail": "File indexed in Qdrant successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/search")
-def search_web_endpoint(q: str):
-    results = orchestrator.search.search(q)
+async def search_web_endpoint(q: str):
+    results = await anyio.to_thread.run_sync(orchestrator.search.search, q)
     return {"query": q, "results": results}
 
 @app.post("/chat", response_model=ChatResponse)
-def chat_endpoint(req: ChatRequest):
+async def chat_endpoint(req: ChatRequest):
     session_id = req.session_id or str(uuid.uuid4())
     query = req.query
     mode = req.mode or "AUTO"
     images = req.images
     
     try:
-        result = orchestrator.process_request(
-            query=query,
-            session_id=session_id,
-            mode=mode,
-            images=images
+        result = await anyio.to_thread.run_sync(
+            lambda: orchestrator.process_request(
+                query=query,
+                session_id=session_id,
+                mode=mode,
+                images=images
+            )
         )
         return ChatResponse(
             response=result["response"],
