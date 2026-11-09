@@ -1,0 +1,85 @@
+{
+  "timestamp": "2026-11-09 10:46:30Z",
+  "model": "Zenith-4B",
+  "hardware": {
+    "ram_total_gb": 15.38,
+    "ram_used_gb": 11.56,
+    "ram_free_gb": 3.82,
+    "cuda_available": true,
+    "gpu_name": "NVIDIA GeForce RTX 5060 Laptop GPU",
+    "vram_total_gb": 7.93,
+    "vram_allocated_mb": 0.0,
+    "vram_reserved_mb": 0.0,
+    "vram_headroom_mb": 6656.0
+  },
+  "categories": {
+    "gen_ai_reasoning": {
+      "score_percent": 50.0,
+      "details": [
+        {
+          "task": "Multi-Step Logic Deduction",
+          "score": 1.0,
+          "elapsed_sec": 45.54,
+          "tokens": 185,
+          "snippet": "Let's analyze this problem step-by-step:\n\n1. We know that D is in Security.\n2. We also know that C is in Backend.\n3. B i"
+        },
+        {
+          "task": "Strict Negative Constraints Following",
+          "score": 0.0,
+          "elapsed_sec": 2.58,
+          "tokens": 33,
+          "snippet": "An API is a set of rules that allows different software applications to communicate with each other. It acts as a bridge"
+        }
+      ]
+    },
+    "coding": {
+      "ast_validity_percent": 100.0,
+      "functional_pass_rate_percent": 100.0,
+      "details": [
+        {
+          "task": "Algorithm: Longest Substring Without Repeating Characters",
+          "ast_valid": 1.0,
+          "unit_test_pass_rate": 1.0,
+          "elapsed_sec": 18.11,
+          "snippet": "def length_of_longest_substring(s: str) -> int:\n    # Initialize variables to track the maximum leng"
+        },
+        {
+          "task": "Algorithm: Merge Overlapping Intervals",
+          "ast_valid": 1.0,
+          "unit_test_pass_rate": 1.0,
+          "elapsed_sec": 10.59,
+          "snippet": "def merge_intervals(intervals: list[list[int]]) -> list[list[int]]:\n    if not intervals:\n        re"
+        }
+      ]
+    },
+    "ocr_document_extraction": {
+      "score_percent": 100.0,
+      "details": [
+        {
+          "task": "Noisy Receipt Text -> Strict Valid JSON Schema",
+          "score": 1.0,
+          "elapsed_sec": 8.64,
+          "snippet": "{\n  \"store_name\": \"ACME SUPERMARKET\",\n  \"date\": \"2026-10-15\",\n  \"items\": [\n    {\n      \"name\": \"Milk"
+        }
+      ]
+    },
+    "diagram_vision": {
+      "score_percent": 0.0,
+      "details": [
+        {
+          "task": "Mermaid Architecture Single Point of Failure Analysis",
+          "score": 0.0,
+          "elapsed_sec": 5.05,
+          "snippet": "The Single Point of Failure (SPOF) for transaction processing is the API Gateway. If the API Gateway"
+        }
+      ]
+    }
+  },
+  "summary": {
+    "composite_score_percent": 62.5,
+    "total_tokens_generated": 793,
+    "total_latency_sec": 90.5,
+    "throughput_tokens_per_sec": 8.76,
+    "final_vram_mb": 1969.33
+  }
+}

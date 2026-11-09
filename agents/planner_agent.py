@@ -28,6 +28,26 @@ class PlannerAgent:
             "}"
         )
         
+        if not self.client.is_healthy():
+            # Fast-path heuristic decomposition when Ollama is offline
+            steps = []
+            step_idx = 1
+            q_lower = query.lower()
+            if any(w in q_lower for w in ["pdf", "doc", "file", "upload"]):
+                steps.append({"step": step_idx, "tool": "RAG", "instruction": f"Retrieve document context for: {query}"})
+                step_idx += 1
+            if any(w in q_lower for w in ["search", "web", "latest", "news", "current"]):
+                steps.append({"step": step_idx, "tool": "SEARCH", "instruction": f"Search web context for: {query}"})
+                step_idx += 1
+            if any(w in q_lower for w in ["code", "script", "python", "function", "calculate"]):
+                steps.append({"step": step_idx, "tool": "CODE", "instruction": f"Code synthesis for: {query}"})
+                step_idx += 1
+            steps.append({"step": step_idx, "tool": "EXECUTE", "instruction": f"Synthesize final solution for: {query}"})
+            return {
+                "steps": steps,
+                "reasoning": "Native fast-path heuristic task decomposition."
+            }
+
         user_prompt = f"Query: {query}\n"
         if conversation_context:
             user_prompt += f"Context:\n{conversation_context}"

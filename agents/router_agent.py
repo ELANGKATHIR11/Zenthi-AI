@@ -48,7 +48,14 @@ class RouterAgent:
                 "reasoning": "Input contains visual content processed by Zenthi-AI VLM."
             }
 
-        # Build prompt for Ollama Router
+        # Fast path if Ollama is offline or native execution mode active
+        if not self.client.is_healthy():
+            intent = self._heuristic_classify(query)
+            return {
+                "intent": intent,
+                "expert_model": self.model,
+                "reasoning": f"Fast-path heuristic routing ({intent}) [Native/Offline Mode]."
+            }
         system_prompt = (
             "You are the Router Agent for Zenthi-AI OS. Your job is to classify the user's intent into one of the following categories:\n"
             "- VISION: Prompt is about analyzing images or visual components.\n"

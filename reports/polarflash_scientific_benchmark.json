@@ -1,27 +1,27 @@
 {
   "hadamard_incoherence": {
-    "energy_preservation_relative_error": 9.219008895698253e-08,
+    "energy_preservation_relative_error": 0.0,
     "energy_preserved": true,
-    "kurtosis_before": 40.58541488647461,
-    "kurtosis_after": 3.3164634704589844,
-    "outlier_rate_before": 0.0025129318237304688,
-    "outlier_rate_after": 0.0029726028442382812,
-    "max_outlier_amplitude_before": 3.827808141708374,
-    "max_outlier_amplitude_after": 0.43039268255233765,
-    "outlier_suppression_ratio": 8.89375748446396
+    "kurtosis_before": 145.30001831054688,
+    "kurtosis_after": 4.321808815002441,
+    "outlier_rate_before": 0.002368927001953125,
+    "outlier_rate_after": 0.0030107498168945312,
+    "max_outlier_amplitude_before": 4.826338291168213,
+    "max_outlier_amplitude_after": 0.6123602986335754,
+    "outlier_suppression_ratio": 7.881533636223208
   },
   "reconstruction": {
     "int4": {
-      "mse": 1.8215647287433967e-05,
-      "snr_db": 13.411900929586286
+      "mse": 1.6454716387670487e-05,
+      "snr_db": 13.854855685227761
     },
     "e8_lattice": {
-      "mse": 1.1472874348328332e-06,
-      "snr_db": 25.41962464142669
+      "mse": 1.1454982313807704e-06,
+      "snr_db": 25.42781546762017
     },
     "polar_quant": {
-      "mse": 7.337233910220675e-06,
-      "snr_db": 17.361019572147665
+      "mse": 6.950419901841087e-06,
+      "snr_db": 17.597653380074124
     }
   },
   "physical_systems": {

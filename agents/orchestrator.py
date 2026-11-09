@@ -161,7 +161,7 @@ class ZenthiAIOrchestrator:
         
         # 8. Execute Expert Model
         workflow_steps.append(f"8. Dispatched execution to Expert: {expert_model}...")
-        response_content = self.execution.execute(expert_model, messages)
+        response_content = self.execution.execute(expert_model, messages, images=images)
         
         # 9. Validate Response Output
         workflow_steps.append("9. Validation Agent running quality check on output...")

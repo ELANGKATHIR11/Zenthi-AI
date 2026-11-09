@@ -10,6 +10,7 @@ from rag.vector_store import LocalRAG
 from search.searxng_client import SearXNGClient
 from memory.history import SessionMemory
 from agents.ollama_client import OllamaClient
+from zenith_engine.multimodal_inference import ZenithMultimodalEngine
 
 class RetrievalAgent:
     def __init__(self, rag: Optional[LocalRAG] = None):
@@ -52,21 +53,63 @@ class MemoryAgent:
         self.memory.clear_session(session_id)
 
 class ExecutionAgent:
-    def __init__(self, client: Optional[OllamaClient] = None):
+    def __init__(
+        self,
+        client: Optional[OllamaClient] = None,
+        multimodal_engine: Optional[ZenithMultimodalEngine] = None
+    ):
         self.client = client or OllamaClient()
-        
-    def execute(self, model: str, messages: List[Dict[str, Any]]) -> str:
-        """Call Ollama's chat API on the target expert model."""
+        self.multimodal_engine = multimodal_engine
+
+    def execute(
+        self,
+        model: str,
+        messages: List[Dict[str, Any]],
+        images: Optional[List[Any]] = None,
+        prefer_backend: str = "auto"
+    ) -> str:
+        """Dispatches execution to local native PyTorch engine or Ollama."""
+        # 1. Check if Ollama is explicitly requested and healthy
+        if prefer_backend == "ollama" and self.client.is_healthy():
+            try:
+                res = self.client.chat(model=model, messages=messages)
+                if "message" in res and "content" in res["message"]:
+                    return res["message"]["content"].strip()
+                elif "error" in res:
+                    return f"[Execution Error] {res['error']}"
+            except Exception as e:
+                pass
+
+        # 2. Native PyTorch / Transformers Engine
         try:
-            res = self.client.chat(model=model, messages=messages)
-            if "message" in res and "content" in res["message"]:
-                return res["message"]["content"].strip()
-            elif "error" in res:
-                return f"[Execution Error] {res['error']}"
-            else:
-                return f"[Execution Error] Unknown response format: {res}"
-        except Exception as e:
-            return f"[Execution Error] Failed to contact model {model}: {e}"
+            if self.multimodal_engine is None:
+                self.multimodal_engine = ZenithMultimodalEngine()
+                
+            # Extract last user query and conversation prefix
+            query = ""
+            history_msgs = []
+            for m in messages:
+                if m.get("role") == "user":
+                    query = m.get("content", "")
+                else:
+                    history_msgs.append(m)
+                    
+            res = self.multimodal_engine.generate(
+                query=query,
+                messages=history_msgs,
+                images=images
+            )
+            return res.get("response", "").strip()
+        except Exception as native_err:
+            # 3. Fallback to Ollama if available
+            if self.client.is_healthy():
+                try:
+                    res = self.client.chat(model=model, messages=messages)
+                    if "message" in res and "content" in res["message"]:
+                        return res["message"]["content"].strip()
+                except Exception:
+                    pass
+            return f"[Execution Error] Native execution error: {native_err}"
 
 class ValidationAgent:
     def validate(self, response: str) -> Dict[str, Any]:
